@@ -1,4 +1,4 @@
-#!/Users/anboygisovgmail.com/Desktop/Универ/api-final-yatube-ad/venv/bin/python3
+#!/Users/nekitf/Documents/yatubeFinalProject/api-final-yatube-ad/venv/bin/python3.13
 # When the django-admin.py deprecation ends, remove this script.
 import warnings
 
