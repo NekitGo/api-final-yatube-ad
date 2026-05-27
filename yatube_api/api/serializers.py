@@ -34,9 +34,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     following = serializers.SlugRelatedField(
         slug_field='username', queryset=User.objects.all()
     )
@@ -44,26 +42,19 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('user', 'following')
         model = Follow
-
-    def validate(self, data):
-        if 'request' in self.context:
-            user = self.context['request'].user
-            following = data.get('following')
-            if following and Follow.objects.filter(user=user, following=following).exists():
-                raise serializers.ValidationError(
-                    {'following': ['Вы уже подписаны на этого пользователя']}
-                )
-        return data
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        following = validated_data.pop('following')
-        return Follow.objects.create(user=user, following=following)
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Follow.objects.all(),
+                fields=['user', 'following']
+            )
+        ]
 
     def validate_following(self, value):
-        if 'request' in self.context:
-            if value == self.context['request'].user:
-                raise serializers.ValidationError(
-                    'Нельзя подписаться на самого себя!'
-                )
+        if value == self.context['request'].user:
+            raise serializers.ValidationError('Нельзя подписаться на самого себя!')
         return value
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['user'] = instance.user.username
+        return data
